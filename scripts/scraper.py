@@ -8,6 +8,11 @@ data = []
 BASE_URL = "https://books.toscrape.com/catalogue/"
 
 
+def rating_em_numero(rating_texto):
+    mapa = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+    return mapa.get(rating_texto, 0)
+
+
 def extrair_livros():
     pagina = 1
 
@@ -23,7 +28,11 @@ def extrair_livros():
 
         for article in dado_livros:
             titulo = article.h3.a["title"]
-            preco = article.find("p", class_="price_color").text
+            preco = (
+                article.find("p", class_="price_color")
+                .text.replace("£", "")
+                .replace("Â", "")
+            )
             rating = article.p["class"][1]
             disponibilidade = article.select_one(".availability").text.strip()
             imagem = "https://books.toscrape.com/" + article.img["src"].replace(
@@ -40,15 +49,15 @@ def extrair_livros():
             data.append(
                 {
                     "titulo": titulo,
-                    "preco": preco,
-                    "rating": rating,
+                    "preco": float(preco),
+                    "rating": rating_em_numero(rating),
                     "disponibilidade": disponibilidade,
                     "imagem": imagem,
                     "categoria": categoria,
                 }
             )
 
-        print(f"{pagina} Concluida")
+        print(f"{pagina} Paginas Concluidas")
         pagina += 1
 
 
