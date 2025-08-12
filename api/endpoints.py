@@ -14,16 +14,19 @@ df["preco"] = df["preco"].astype(float)
 
 @router.get("/health")
 async def status():
+    """ Endpoint de verificação de saúde da API """
     return {"status": "ok", "livros_carregados": len(df)}
 
 
 @router.get("/books")
 async def books():
+    """ Retorna todos os livros disponíveis na base de dados """
     return df.to_dict(orient="records")
 
 
 @router.get("/books/categoria")
 async def listar_categorias():
+    """ Retorna todas as categorias disponíveis """
     return df["categoria"].unique().tolist()
 
 @router.get("/books/search")
@@ -45,6 +48,7 @@ def buscar_livros(title: str = None, category: str = None):
 
 @router.get("/stats/overview")
 def stats_gerais():
+    """ Retorna estatísticas gerais dos livros """
     total_livros = len(df)
     preco_medio = round(df["preco"].mean(), 2)
     distribuicao_ratings = df["rating"].value_counts().sort_index().to_dict()
@@ -58,6 +62,7 @@ def stats_gerais():
 
 @router.get("/stats/categories")
 def stats_por_categoria():
+    """ Retorna estatísticas por categoria """
     stats = df.groupby("categoria").agg(
         quantidade=("titulo", "count"),
         preco_medio=("preco", "mean"),
@@ -69,12 +74,14 @@ def stats_por_categoria():
 
 @router.get("/books/top-rated", response_model=List[BookResponse])
 def livros_top_rating():
+    """ Retorna os livros com a maior classificação """
     max_rating = df["rating"].max()
     top_livros = df[df["rating"] == max_rating]
     return top_livros.to_dict(orient="records")
 
 @router.get("/books/price-range", response_model=List[BookResponse])
 def livros_por_faixa_de_preco(min: float = Query(...), max: float = Query(...)):
+    """ Retorna livros dentro de uma faixa de preço específica """
     if min > max:
         raise HTTPException(status_code=400, detail="O valor mínimo não pode ser maior que o máximo.")
     filtrado = df[(df["preco"] >= min) & (df["preco"] <= max)]
@@ -85,6 +92,7 @@ def livros_por_faixa_de_preco(min: float = Query(...), max: float = Query(...)):
 
 @router.get("/books/{id}")
 async def livro_por_id(id: int):
+    """ Retorna um livro específico pelo ID """
     if id not in df.index:
         raise HTTPException(status_code=404, detail="Livro não encontrado")
     return df.loc[id].to_dict()
