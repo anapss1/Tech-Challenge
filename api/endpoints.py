@@ -12,13 +12,6 @@ df["id"] = df.index
 df["rating"] = df["rating"].astype(int)
 df["preco"] = df["preco"].astype(float)
 
-
-@router.get("/scraping/trigger")
-def executar_scraping(Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    usuario = Authorize.get_jwt_subject()
-    return {"mensagem": f"Scraping acionado por {usuario}"}
-
 @router.get("/health")
 async def status():
     return {"status": "ok", "livros_carregados": len(df)}
@@ -29,9 +22,25 @@ async def books():
     return df.to_dict(orient="records")
 
 
-@router.get("/categoria")
+@router.get("/books/categoria")
 async def listar_categorias():
     return df["categoria"].unique().tolist()
+
+@router.get("/books/search")
+def buscar_livros(title: str = None, category: str = None):
+    """Busca livros por título e/ou categoria"""
+    resultado = df.copy()
+
+    if title:
+        resultado = resultado[resultado["titulo"].str.contains(title, case=False, na=False)]
+    if category:
+        resultado = resultado[resultado["categoria"].str.contains(category, case=False, na=False)]
+
+    if resultado.empty:
+        raise HTTPException(status_code=404, detail="Nenhum livro encontrado com os critérios informados.")
+
+    return resultado.to_dict(orient="records")
+
 
 
 @router.get("/stats/overview")
